@@ -1,0 +1,19 @@
+--- a/usr/src/app/server/dist/services/auth.service.js
++++ b/usr/src/app/server/dist/services/auth.service.js
+@@ -461,13 +461,12 @@
+     getRoleClaim(profile, roleClaim) {
+         const value = profile[roleClaim];
+         const roles = Array.isArray(value) ? value : [value];
++        const adminRole = process.env.IMMICH_ADMIN_ROLE || 'admin';
+         const isRole = (role) => roles.includes(role);
+-        if (isRole('admin')) {
++        if (isRole(adminRole)) {
+             return 'admin';
+         }
+-        if (isRole('user')) {
+-            return 'user';
+-        }
++        return 'user';
+     }
+     resolveRedirectUri({ mobileRedirectUri, mobileOverrideEnabled }, url) {
+         if (mobileOverrideEnabled && mobileRedirectUri) {

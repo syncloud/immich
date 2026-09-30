@@ -1,0 +1,15 @@
+#!/bin/bash -e
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )
+
+# perl's @INC is a list of absolute paths baked into the binary, so a bundled
+# perl picks up the host's modules when the device happens to have any. PERL5LIB
+# is prepended to @INC and puts the bundled tree first.
+export PERL5LIB=$(ls -d \
+    ${DIR}/usr/share/perl/[0-9]* \
+    ${DIR}/usr/lib/*-linux-gnu/perl/[0-9]* \
+    ${DIR}/usr/lib/*-linux-gnu/perl-base \
+    ${DIR}/usr/share/perl5 \
+    ${DIR}/usr/lib/*-linux-gnu/perl5/[0-9]* \
+    2>/dev/null | paste -sd: -)
+
+exec ${DIR}/usr/bin/perl "$@"

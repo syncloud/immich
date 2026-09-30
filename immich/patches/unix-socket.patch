@@ -1,0 +1,69 @@
+--- a/usr/src/app/server/dist/app.common.js
++++ b/usr/src/app/server/dist/app.common.js
+@@ -59,7 +59,13 @@
+     }
+     app.use(app.get(ssr).ssr(constants_1.excludePaths));
+     app.use((0, compression_1.default)());
+-    const server = await (host ? app.listen(port, host) : app.listen(port));
++    const socket = process.env.IMMICH_SOCKET;
++    if (socket) {
++        node_fs_1.rmSync(socket, { force: true });
++    }
++    const server = await (socket
++        ? app.listen(socket)
++        : host ? app.listen(port, host) : app.listen(port));
+     server.requestTimeout = 24 * 60 * 60 * 1000;
+     logger.log(`${constants_1.IMMICH_SERVER_START} on ${await app.getUrl()} [v${constants_1.serverVersion}] [${environment}] `);
+ }
+--- a/usr/src/app/server/dist/workers/microservices.js
++++ b/usr/src/app/server/dist/workers/microservices.js
+@@ -24,7 +24,13 @@
+     logger.setContext('Bootstrap');
+     app.useLogger(logger);
+     app.useWebSocketAdapter(new websocket_adapter_1.WebSocketAdapter(app));
+-    await (host ? app.listen(0, host) : app.listen(0));
++    const socket = process.env.IMMICH_SOCKET ? `${process.env.IMMICH_SOCKET}.microservices` : undefined;
++    if (socket) {
++        require('node:fs').rmSync(socket, { force: true });
++    }
++    await (socket
++        ? app.listen(socket)
++        : host ? app.listen(0, host) : app.listen(0));
+     logger.log(`Immich Microservices is running [v${constants_1.serverVersion}] [${environment}] `);
+ }
+ if (!node_worker_threads_1.isMainThread) {
+--- a/usr/src/app/server/dist/repositories/machine-learning.repository.js
++++ b/usr/src/app/server/dist/repositories/machine-learning.repository.js
+@@ -14,6 +14,14 @@
+ const common_1 = require("@nestjs/common");
+ const luxon_1 = require("luxon");
+ const promises_1 = require("node:fs/promises");
++const undici_1 = require("undici");
++const mlSocket_1 = process.env.IMMICH_ML_SOCKET;
++const mlDispatcher_1 = mlSocket_1
++    ? new undici_1.Agent({ connect: { socketPath: mlSocket_1 } })
++    : undefined;
++const mlFetch_1 = (input, init) => mlDispatcher_1
++    ? undici_1.fetch(input, { ...init, dispatcher: mlDispatcher_1 })
++    : fetch(input, init);
+ const logging_repository_1 = require("./logging.repository");
+ var ModelTask;
+ (function (ModelTask) {
+@@ -72,7 +80,7 @@
+     async check(url) {
+         let isHealthy = false;
+         try {
+-            const response = await fetch(new URL('ping', url), {
++            const response = await mlFetch_1(new URL('ping', url), {
+                 signal: AbortSignal.timeout(this.config.availabilityChecks.timeout),
+             });
+             if (response.ok) {
+@@ -102,7 +110,7 @@
+             ...this.config.urls.filter((url) => !this.isHealthy(url)),
+         ]) {
+             try {
+-                const response = await fetch(new URL('predict', url), { method: 'POST', body: formData });
++                const response = await mlFetch_1(new URL('predict', url), { method: 'POST', body: formData });
+                 if (response.ok) {
+                     this.setHealthy(url, true);
+                     return response.json();

@@ -1,0 +1,73 @@
+name: immich
+summary: Immich
+description: High performance self-hosted photo and video management solution
+grade: stable
+
+apps:
+  postgresql:
+    user: immich
+    command: bin/service.postgresql.sh
+    daemon: forking
+    restart-condition: always
+    start-timeout: 600s
+    restart-delay: 10s
+
+  redis:
+    user: immich
+    command: bin/service.redis.sh
+    daemon: simple
+    restart-condition: always
+    start-timeout: 600s
+    restart-delay: 10s
+
+  immich:
+    user: immich
+    command: bin/service.immich.sh
+    daemon: simple
+    restart-condition: always
+    start-timeout: 600s
+    restart-delay: 10s
+    after: [postgresql, redis]
+
+  ml:
+    user: immich
+    command: bin/service.ml.sh
+    daemon: simple
+    restart-condition: always
+    start-timeout: 600s
+    restart-delay: 10s
+
+  nginx:
+    user: immich
+    command: bin/service.nginx.sh
+    daemon: simple
+    restart-condition: always
+    start-timeout: 600s
+    restart-delay: 10s
+
+  cli:
+    command: bin/cli
+
+  psql:
+    command: bin/psql.sh
+
+  pgdumpall:
+    command: bin/pg_dumpall.sh
+
+  admin:
+    command: bin/immich-admin.sh
+
+  storage-change:
+    command: bin/cli storage-change
+
+  access-change:
+    command: bin/cli access-change
+
+  backup-pre-stop:
+    command: bin/cli backup-pre-stop
+
+  restore-pre-start:
+    command: bin/cli restore-pre-start
+
+  restore-post-start:
+    command: bin/cli restore-post-start
