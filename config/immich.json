@@ -1,0 +1,33 @@
+{
+  "backup": {
+    "database": {
+      "enabled": false
+    }
+  },
+  "machineLearning": {
+    "enabled": true,
+    "urls": ["http://machine-learning"]
+  },
+  "newVersionCheck": {
+    "enabled": false
+  },
+  "oauth": {
+    "enabled": true,
+    "autoLaunch": false,
+    "autoRegister": true,
+    "buttonText": "Login with Syncloud",
+    "clientId": "{{ .App }}",
+    "clientSecret": "{{ .OIDCSecret }}",
+    "issuerUrl": "{{ .AuthUrl }}/.well-known/openid-configuration",
+    "mobileOverrideEnabled": true,
+    "mobileRedirectUri": "{{ .MobileUrl }}",
+    "roleClaim": "groups",
+    "scope": "openid email profile groups",
+    "signingAlgorithm": "RS256",
+    "storageLabelClaim": "preferred_username",
+    "tokenEndpointAuthMethod": "client_secret_basic"
+  },
+  "server": {
+    "externalDomain": "{{ .AppUrl }}"
+  }
+}

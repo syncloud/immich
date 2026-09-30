@@ -1,0 +1,15 @@
+--- a/usr/src/immich_ml/__main__.py
++++ b/usr/src/immich_ml/__main__.py
+@@ -24,7 +24,11 @@
+ bind_host = non_prefixed_settings.immich_host
+ if is_ipv6(bind_host):
+     bind_host = f"[{bind_host}]"
+-bind_address = f"{bind_host}:{non_prefixed_settings.immich_port}"
++immich_ml_socket = os.environ.get("IMMICH_ML_SOCKET")
++if immich_ml_socket:
++    bind_address = f"unix:{immich_ml_socket}"
++else:
++    bind_address = f"{bind_host}:{non_prefixed_settings.immich_port}"
+ 
+ try:
+     with subprocess.Popen(

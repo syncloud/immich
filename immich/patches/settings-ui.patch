@@ -1,0 +1,22 @@
+--- a/usr/src/app/server/dist/services/server.service.js
++++ b/usr/src/app/server/dist/services/server.service.js
+@@ -22,8 +22,8 @@
+ const misc_1 = require("../utils/misc");
+ let ServerService = class ServerService extends base_service_1.BaseService {
+     async onBootstrap() {
+-        const featureFlags = await this.getFeatures();
+-        if (featureFlags.configFile) {
++        const { configFile } = this.configRepository.getEnv();
++        if (configFile) {
+             await this.systemMetadataRepository.set(enum_1.SystemMetadataKey.AdminOnboarding, {
+                 isOnboarded: true,
+             });
+@@ -86,7 +86,7 @@
+             oauthAutoLaunch: oauth.autoLaunch,
+             ocr: (0, misc_1.isOcrEnabled)(machineLearning),
+             passwordLogin: passwordLogin.enabled,
+-            configFile: !!configFile,
++            configFile: false,
+             email: notifications.smtp.enabled,
+             realtimeTranscoding: ffmpeg.realtime.enabled,
+         };

@@ -1,0 +1,28 @@
+--- a/usr/src/app/server/dist/utils/config.js
++++ b/usr/src/app/server/dist/utils/config.js
+@@ -96,9 +96,9 @@
+ const buildConfig = async (repos) => {
+     const { configRepo, metadataRepo, logger } = repos;
+     const { configFile } = configRepo.getEnv();
+-    const partial = configFile
+-        ? await loadFromFile(repos, configFile)
+-        : await metadataRepo.get(enum_1.SystemMetadataKey.SystemConfig);
++    const stored = await metadataRepo.get(enum_1.SystemMetadataKey.SystemConfig);
++    const overrides = configFile ? await loadFromFile(repos, configFile) : undefined;
++    const partial = _.merge({}, stored, overrides);
+     const rawConfig = _.cloneDeep(config_dto_1.defaults);
+     for (const property of (0, misc_1.getKeysDeep)(partial)) {
+         _.set(rawConfig, property, _.get(partial, property));
+--- a/usr/src/app/server/dist/services/system-config.service.js
++++ b/usr/src/app/server/dist/services/system-config.service.js
+@@ -69,10 +69,6 @@
+         }
+     }
+     async updateAdminConfig(dto) {
+-        const { configFile } = this.configRepository.getEnv();
+-        if (configFile) {
+-            throw new common_1.BadRequestException('Cannot update configuration while IMMICH_CONFIG_FILE is in use');
+-        }
+         const oldConfig = await this.getConfig({ withCache: false });
+         try {
+             await this.eventRepository.emit('ConfigValidate', { newConfig: (0, object_1.toPlainObject)(dto), oldConfig });
