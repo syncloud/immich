@@ -13,10 +13,10 @@ import {
 } from '../helpers/immich'
 
 test.describe('immich smoke', () => {
-  test('the login page offers syncloud sso', async ({ page }, testInfo) => {
+  test('the site sends you straight to syncloud sso', async ({ page }, testInfo) => {
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'Login' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Login with Syncloud' })).toBeVisible()
+    await expect(page.locator('#username-textfield')).toBeVisible()
+    await expect(page.locator('#sign-in-button')).toBeVisible()
     await shoot(page, testInfo, 'login')
   })
 

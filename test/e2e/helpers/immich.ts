@@ -23,12 +23,14 @@ export function assets(page: Page) {
 export async function login(page: Page, user: string, password: string) {
   await page.goto('/')
 
-  const sso = page.getByRole('button', { name: 'Login with Syncloud' })
-  await expect(sso).toBeEnabled()
-  await sso.click()
-
   const username = page.locator('#username-textfield')
-  await expect(username).toBeVisible()
+  const redirected = await username
+    .waitFor({ state: 'visible', timeout: 15_000 })
+    .then(() => true, () => false)
+  if (!redirected) {
+    await page.getByRole('button', { name: 'Login with Syncloud' }).click()
+    await expect(username).toBeVisible()
+  }
   await username.fill(user)
   await page.locator('#password-textfield').fill(password)
   await page.locator('#sign-in-button').click()
