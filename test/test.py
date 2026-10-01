@@ -132,6 +132,24 @@ def test_oauth_is_configured(app_domain):
     assert config['oauth']['buttonText'] == 'Login with Syncloud', response.text
 
 
+def test_password_login_is_disabled(app_domain):
+    response = requests.post(
+        'https://{0}/api/auth/login'.format(app_domain),
+        json={'email': 'nobody@example.com', 'password': 'Password1'},
+        verify=False)
+    assert response.status_code == 401, response.text
+    assert 'Password login has been disabled' in response.text, response.text
+
+
+def test_sso_is_the_only_login_offered(app_domain):
+    response = requests.get('https://{0}/api/server/features'.format(app_domain), verify=False)
+    assert response.status_code == 200, response.text
+    features = response.json()
+    assert features['oauth'], response.text
+    assert features['oauthAutoLaunch'], response.text
+    assert not features['passwordLogin'], response.text
+
+
 def test_oauth_authorize_redirects_to_authelia(app_domain):
     response = requests.post(
         'https://{0}/api/oauth/authorize'.format(app_domain),

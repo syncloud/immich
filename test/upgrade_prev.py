@@ -2,7 +2,6 @@ import pytest
 import requests
 from subprocess import check_output
 from syncloudlib.integration.hosts import add_host_alias
-from syncloudlib.integration.installer import local_install
 from syncloudlib.http import wait_for_rest
 
 TMP_DIR = '/tmp/syncloud'
@@ -25,7 +24,7 @@ def test_start(module_setup, app, device_host, domain, device):
     device.run_ssh('mkdir -p {0}'.format(TMP_DIR), throw=False)
 
 
-def test_install_clean(device, app, app_archive_path, device_host, device_password, app_domain):
+def test_install_store(device, app, app_domain):
     device.run_ssh('snap remove {0}'.format(app), throw=False)
-    local_install(device_host, device_password, app_archive_path)
+    device.run_ssh('snap install {0}'.format(app), retries=10)
     wait_for_rest(requests.session(), 'https://{0}'.format(app_domain), 200, 100)
