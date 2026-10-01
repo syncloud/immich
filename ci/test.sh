@@ -8,4 +8,4 @@ APP=$3
 
 cd ${DIR}/test
 ./deps.sh
-py.test -x -s --timeout=1800 --timeout-method=thread ${SPEC} --distro=${DISTRO} --ver=${DRONE_BUILD_NUMBER} --app=${APP}
+py.test -x -s --timeout=1800 --timeout-method=signal ${SPEC} --distro=${DISTRO} --ver=${DRONE_BUILD_NUMBER} --app=${APP}

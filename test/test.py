@@ -82,9 +82,19 @@ def test_services_running(device):
     assert_all_services_active(device)
 
 
+def wait_for_socket(device, path):
+    for _ in range(120):
+        if 'present' in device.run_ssh(
+                'test -S {0} && echo present || echo missing'.format(path), throw=False):
+            return
+        time.sleep(10)
+    log = device.run_ssh('journalctl -u snap.immich.immich -n 100 --no-pager', throw=False)
+    assert False, '{0} never appeared\n{1}'.format(path, log)
+
+
 def test_listens_on_unix_sockets(device):
-    device.run_ssh('test -S /var/snap/immich/current/immich.sock', retries=100)
-    device.run_ssh('test -S /var/snap/immich/current/immich.sock.microservices', retries=100)
+    wait_for_socket(device, '/var/snap/immich/current/immich.sock')
+    wait_for_socket(device, '/var/snap/immich/current/immich.sock.microservices')
 
 
 def test_machine_learning_listens_on_a_socket(device):
