@@ -26,6 +26,27 @@ test.describe('immich ui', () => {
     await shoot(page, testInfo, 'photo')
   })
 
+  test('a HEIC photo gets a thumbnail', async ({ page }, testInfo) => {
+    await login(page, deviceUser, devicePassword)
+    await uploadPhoto(page, 'sample.heic')
+
+    let id = ''
+    await expect(async () => {
+      const search = await page.request.post('/api/search/metadata', { data: { originalFileName: 'sample.heic' } })
+      expect(search.status()).toBe(200)
+      const items = (await search.json()).assets.items
+      expect(items).toHaveLength(1)
+      id = items[0].id
+    }).toPass({ timeout: 300_000, intervals: [2_000] })
+
+    await expect(async () => {
+      const thumbnail = await page.request.get(`/api/assets/${id}/thumbnail?size=thumbnail`)
+      expect(thumbnail.status()).toBe(200)
+      expect(thumbnail.headers()['content-type']).toMatch(/^image\//)
+    }).toPass({ timeout: 300_000, intervals: [5_000] })
+    await shoot(page, testInfo, 'heic')
+  })
+
   test('create an album', async ({ page }, testInfo) => {
     await login(page, deviceUser, devicePassword)
 

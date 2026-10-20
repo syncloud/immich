@@ -11,6 +11,7 @@ export NODE_EXTRA_CA_CERTS=/var/snap/platform/current/syncloud.ca.crt
 export PATH=${DIR}/immich/path:${PATH}
 export TMPDIR=${SNAP_DATA}/tmp
 export HOME=${SNAP_DATA}
+export VIPSHOME=${DIR}/immich/usr/local
 
 cd ${DIR}/immich/usr/src/app/server
 exec ${DIR}/immich/usr/local/bin/node ${DIR}/immich/usr/src/app/server/dist/main.js
