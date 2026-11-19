@@ -4,7 +4,7 @@ local postgresql = '14-vectorchord0.4.3-pgvectors0.2.0';
 local valkey = '9.1.2';
 
 local go = '1.25';
-local nginx = '1.30.4';
+local nginx = '1.30.7';
 local debian = 'bookworm-slim';
 local python = '3.12-slim-bookworm';
 local platform = '26.09.02';
