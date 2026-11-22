@@ -1,28 +1,36 @@
 --- a/usr/src/app/server/dist/utils/config.js
 +++ b/usr/src/app/server/dist/utils/config.js
-@@ -96,9 +96,9 @@
+@@ -1,6 +1,6 @@
+ import AsyncLock from 'async-lock';
+ import { load as loadYaml } from 'js-yaml';
+-import { cloneDeep, get, isEmpty, isEqual, set } from 'lodash-es';
++import { cloneDeep, get, isEmpty, isEqual, merge, set } from 'lodash-es';
+ import { AdminConfigDto, defaults } from "../dtos/config.dto.js";
+ import { DatabaseLock, SystemMetadataKey } from "../enum.js";
+ import { getKeysDeep, unsetDeep } from "./misc.js";
+@@ -54,9 +54,9 @@
  const buildConfig = async (repos) => {
      const { configRepo, metadataRepo, logger } = repos;
      const { configFile } = configRepo.getEnv();
 -    const partial = configFile
 -        ? await loadFromFile(repos, configFile)
--        : await metadataRepo.get(enum_1.SystemMetadataKey.SystemConfig);
-+    const stored = await metadataRepo.get(enum_1.SystemMetadataKey.SystemConfig);
+-        : await metadataRepo.get(SystemMetadataKey.SystemConfig);
++    const stored = await metadataRepo.get(SystemMetadataKey.SystemConfig);
 +    const overrides = configFile ? await loadFromFile(repos, configFile) : undefined;
-+    const partial = _.merge({}, stored, overrides);
-     const rawConfig = _.cloneDeep(config_dto_1.defaults);
-     for (const property of (0, misc_1.getKeysDeep)(partial)) {
-         _.set(rawConfig, property, _.get(partial, property));
++    const partial = merge({}, stored, overrides);
+     const rawConfig = cloneDeep(defaults);
+     for (const property of getKeysDeep(partial)) {
+         set(rawConfig, property, get(partial, property));
 --- a/usr/src/app/server/dist/services/system-config.service.js
 +++ b/usr/src/app/server/dist/services/system-config.service.js
-@@ -69,10 +69,6 @@
+@@ -63,10 +63,6 @@
          }
      }
      async updateAdminConfig(dto) {
 -        const { configFile } = this.configRepository.getEnv();
 -        if (configFile) {
--            throw new common_1.BadRequestException('Cannot update configuration while IMMICH_CONFIG_FILE is in use');
+-            throw new BadRequestException('Cannot update configuration while IMMICH_CONFIG_FILE is in use');
 -        }
          const oldConfig = await this.getConfig({ withCache: false });
          try {
-             await this.eventRepository.emit('ConfigValidate', { newConfig: (0, object_1.toPlainObject)(dto), oldConfig });
+             await this.eventRepository.emit('ConfigValidate', { newConfig: toPlainObject(dto), oldConfig });

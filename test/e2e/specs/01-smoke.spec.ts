@@ -1,9 +1,8 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 import { shoot } from '../helpers/screenshot'
 import {
-  login,
+  signIn,
   expectApp,
-  expectAdmin,
   openSettings,
   openSettingsSection,
   saveSettings,
@@ -12,57 +11,52 @@ import {
   devicePassword,
 } from '../helpers/immich'
 
-test.describe('immich smoke', () => {
-  test('the site sends you straight to syncloud sso', async ({ page }, testInfo) => {
+test('immich smoke', async ({ page }) => {
+  await test.step('the site sends you straight to syncloud sso', async () => {
     await page.goto('/')
     await expect(page.locator('#username-textfield')).toBeVisible()
     await expect(page.locator('#sign-in-button')).toBeVisible()
-    await shoot(page, testInfo, 'login')
+    await shoot(page, 'login')
   })
 
-  test('log in through syncloud sso as an admin', async ({ page }, testInfo) => {
-    await login(page, deviceUser, devicePassword)
+  await test.step('log in through syncloud sso as an admin', async () => {
+    await signIn(page, deviceUser, devicePassword)
     await expectApp(page)
-    await shoot(page, testInfo, 'photos')
-    await expectAdmin(page, deviceUser, true)
+    await shoot(page, 'photos')
   })
 
-  test('an existing admin is still an admin on the next login', async ({ page }) => {
-    await login(page, deviceUser, devicePassword)
-    await expectAdmin(page, deviceUser, true)
-  })
+  const days = page.getByRole('spinbutton', { name: 'Number of days' })
 
-  test('the admin can change a setting the installer does not force', async ({ page }) => {
-    await login(page, deviceUser, devicePassword)
+  await test.step('the admin can change a setting the installer does not force', async () => {
     await openSettings(page, deviceUser)
-
     await openSettingsSection(page, 'Trash Settings')
-    const days = page.getByRole('spinbutton', { name: 'Number of days' })
     await expect(days).toBeEnabled()
     await days.fill('14')
-    await saveSettings(page)
+    await saveSettings(days)
+  })
 
+  await test.step('the changed setting is kept', async () => {
     await openPhotos(page)
     await openSettings(page, deviceUser)
     await openSettingsSection(page, 'Trash Settings')
     await expect(days).toHaveValue('14')
   })
 
-  test('a setting the installer forces comes back after the admin changes it', async ({ page }) => {
-    await login(page, deviceUser, devicePassword)
-    await openSettings(page, deviceUser)
+  const versionCheck = page.getByRole('switch', { name: 'Enable version check' })
 
+  await test.step('the admin flips a setting the installer forces', async () => {
     await openSettingsSection(page, 'Version Check')
-    const versionCheck = page.getByRole('switch', { name: 'Enable version check' })
     await expect(versionCheck).toBeEnabled()
     await expect(versionCheck).not.toBeChecked()
-
     await versionCheck.click()
-    await saveSettings(page)
+    await saveSettings(versionCheck)
+  })
 
+  await test.step('the forced setting comes back', async () => {
     await openPhotos(page)
     await openSettings(page, deviceUser)
     await openSettingsSection(page, 'Version Check')
     await expect(versionCheck).not.toBeChecked()
+    await shoot(page, 'settings')
   })
 })

@@ -36,7 +36,6 @@ find ${BUILD_DIR}/usr ${BUILD_DIR}/opt -type l -lname '/*' | while read -r link;
     ln -sfn "$(realpath -m --relative-to="$(dirname "${link}")" "${BUILD_DIR}${target}")" "${link}"
 done
 
-# a venv records an absolute home and its python finds no stdlib without this
 sed -i "s#^home = .*#home = ${SNAP}/ml/usr/local/bin#" ${BUILD_DIR}/opt/venv/pyvenv.cfg
 
 LD=$(ls ${SNAP}/ml/usr/lib/*-linux-*/ld-linux-*.so.* ${SNAP}/ml/usr/lib/*-linux-*/ld-[0-9]*.so 2>/dev/null | head -1)
@@ -46,7 +45,6 @@ LIBS=${LIBS}:${SNAP}/ml/usr/lib:${SNAP}/ml/usr/local/lib
 PYTHON=$(echo ${BUILD_DIR}/usr/local/bin/python3.[0-9]*)
 PYTHON=$(echo ${PYTHON} | tr ' ' '\n' | grep -v config | head -1)
 
-# the rpath must be set before the interpreter and in a separate call
 patchelf --force-rpath --set-rpath ${LIBS} ${PYTHON}
 patchelf --set-interpreter ${LD} ${PYTHON}
 

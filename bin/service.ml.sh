@@ -7,8 +7,6 @@ ${DIR}/bin/wait-for-configure.sh
 . "${SNAP_DATA}/config/env"
 
 /bin/rm -f ${IMMICH_ML_SOCKET}
-# onnxruntime's own DT_RUNPATH beats the interpreter rpath and finds the host
-# glibc; LD_LIBRARY_PATH is searched ahead of it
 MLLIBS=$(echo ${DIR}/ml/usr/lib/*-linux-gnu)
 MLLIBS=${MLLIBS}:${DIR}/ml/usr/lib:${DIR}/ml/usr/local/lib
 

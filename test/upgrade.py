@@ -5,6 +5,9 @@ from syncloudlib.integration.hosts import add_host_alias
 from syncloudlib.integration.installer import local_install
 from syncloudlib.http import wait_for_rest
 
+import services
+import snapd
+
 TMP_DIR = '/tmp/syncloud'
 BEFORE = {}
 
@@ -35,6 +38,7 @@ def count(device, table):
 
 def test_start(module_setup, app, device_host, domain, device):
     add_host_alias(app, device_host, domain)
+    snapd.settle(device)
     device.activated()
     device.run_ssh('mkdir -p {0}'.format(TMP_DIR), throw=False)
 
@@ -63,3 +67,7 @@ def test_services_running_after_upgrade(device):
     rows = [line.split() for line in out.strip().split('\n')[1:] if line.strip()]
     not_active = [row[0] for row in rows if len(row) >= 3 and row[2] != 'active']
     assert not not_active, (not_active, out)
+
+
+def test_services_started_cleanly_after_upgrade(device):
+    services.assert_no_restarts(device)

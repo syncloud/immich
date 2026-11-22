@@ -11,6 +11,9 @@ from syncloudlib.http import wait_for_rest
 from syncloudlib.integration.hosts import add_host_alias
 from syncloudlib.integration.installer import local_install
 
+import services
+import snapd
+
 DIR = dirname(__file__)
 TMP_DIR = '/tmp/syncloud'
 
@@ -41,22 +44,16 @@ def module_setup(request, device, artifact_dir):
     request.addfinalizer(module_teardown)
 
 
-def settle(device):
-    device.run_ssh('snap wait system seed.loaded', retries=100, throw=False)
-    device.run_ssh('snap set system refresh.hold=2099-01-01T00:00:00Z', retries=20, throw=False)
-    device.run_ssh('snap abort --last=auto-refresh', throw=False)
-    device.run_ssh('snap watch --last=auto-refresh', throw=False)
-
-
 def test_start(module_setup, device, device_host, app, domain):
     add_host_alias(app, device_host, domain)
+    snapd.settle(device)
     device.run_ssh('date', retries=100)
     device.run_ssh('mkdir -p {0}'.format(TMP_DIR))
 
 
 @pytest.mark.flaky(retries=50, delay=10)
 def test_activate_device(device):
-    settle(device)
+    snapd.settle(device)
     device.run_ssh('rm -f /var/snap/platform/current/syncloud.crt', throw=False)
     response = retry(device.activate_custom)
     assert response.status_code == 200, response.text
@@ -69,7 +66,7 @@ def test_ca_cert(device, app_domain):
 
 
 def test_install(app_archive_path, device_host, device_password, device):
-    settle(device)
+    snapd.settle(device)
     device.run_ssh('touch /var/snap/platform/current/CI_TEST')
     local_install(device_host, device_password, app_archive_path)
 
@@ -80,6 +77,10 @@ def test_index(app_domain):
 
 def test_services_running(device):
     assert_all_services_active(device)
+
+
+def test_services_started_cleanly(device):
+    services.assert_no_restarts(device)
 
 
 def test_listens_on_unix_sockets(device):
@@ -198,15 +199,18 @@ def test_remove(device, app):
     assert response.status_code == 200, response.text
 
 
-def test_reinstall(app_archive_path, device_host, device_password, app_domain):
+def test_reinstall(app_archive_path, device_host, device_password, app_domain, device):
     local_install(device_host, device_password, app_archive_path)
     wait_for_rest(requests.session(), 'https://{0}'.format(app_domain), 200, 100)
+    assert_all_services_active(device)
+    services.assert_no_restarts(device)
 
 
 def test_upgrade(app_archive_path, device_host, device_password, app_domain, device):
     local_install(device_host, device_password, app_archive_path)
     wait_for_rest(requests.session(), 'https://{0}'.format(app_domain), 200, 100)
     assert_all_services_active(device)
+    services.assert_no_restarts(device)
 
 
 def test_backup(device, artifact_dir, app_domain):

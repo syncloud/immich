@@ -1,19 +1,20 @@
---- a/usr/src/app/server/dist/services/auth.service.js
-+++ b/usr/src/app/server/dist/services/auth.service.js
-@@ -461,13 +461,12 @@
-     getRoleClaim(profile, roleClaim) {
-         const value = profile[roleClaim];
-         const roles = Array.isArray(value) ? value : [value];
+--- a/usr/src/app/server/dist/dtos/auth.dto.js
++++ b/usr/src/app/server/dist/dtos/auth.dto.js
+@@ -48,14 +48,12 @@
+     immich_role: z
+         .union([z.string(), z.array(z.string())])
+-        .optional()
++        .nullish()
+         .transform((value) => {
+-        if (!value) {
+-            return;
+-        }
 +        const adminRole = process.env.IMMICH_ADMIN_ROLE || 'admin';
-         const isRole = (role) => roles.includes(role);
--        if (isRole('admin')) {
-+        if (isRole(adminRole)) {
+         const roles = Array.isArray(value) ? value : [value];
+-        if (roles.includes('admin')) {
++        if (roles.includes(adminRole)) {
              return 'admin';
          }
--        if (isRole('user')) {
--            return 'user';
--        }
-+        return 'user';
-     }
-     resolveRedirectUri({ mobileRedirectUri, mobileOverrideEnabled }, url) {
-         if (mobileOverrideEnabled && mobileRedirectUri) {
+         return 'user';
+     })
+         .catch(undefined),
