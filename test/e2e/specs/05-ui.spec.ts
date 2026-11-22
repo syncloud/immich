@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 import { shoot } from '../helpers/screenshot'
 import {
   login,
@@ -7,27 +7,30 @@ import {
   expectAssetCount,
   openAdministration,
   primaryNav,
+  openPhotos,
   deviceUser,
   devicePassword,
 } from '../helpers/immich'
 
-test.describe('immich ui', () => {
-  test('upload a photo and open it', async ({ page }, testInfo) => {
+test('immich ui', async ({ page }) => {
+  await test.step('upload a photo and open it', async () => {
     await login(page, deviceUser, devicePassword)
-    await shoot(page, testInfo, 'timeline-empty')
+    await shoot(page, 'timeline-empty')
 
     await uploadPhoto(page, 'sample.jpg')
     await expectAssetCount(page, 1)
-    await shoot(page, testInfo, 'timeline')
+    await shoot(page, 'timeline')
 
     await assets(page).first().click()
     await expect(page.getByRole('button', { name: 'Go back' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Info', exact: true })).toBeVisible()
-    await shoot(page, testInfo, 'photo')
+    await shoot(page, 'photo')
+
+    await page.getByRole('button', { name: 'Go back' }).click()
+    await expect(primaryNav(page)).toBeVisible()
   })
 
-  test('a HEIC photo gets a thumbnail', async ({ page }, testInfo) => {
-    await login(page, deviceUser, devicePassword)
+  await test.step('a HEIC photo gets a thumbnail', async () => {
     await uploadPhoto(page, 'sample.heic')
 
     let id = ''
@@ -44,40 +47,38 @@ test.describe('immich ui', () => {
       expect(thumbnail.status()).toBe(200)
       expect(thumbnail.headers()['content-type']).toMatch(/^image\//)
     }).toPass({ timeout: 300_000, intervals: [5_000] })
-    await shoot(page, testInfo, 'heic')
+    await shoot(page, 'heic')
   })
 
-  test('create an album', async ({ page }, testInfo) => {
-    await login(page, deviceUser, devicePassword)
-
-    await primaryNav(page).getByRole('link', { name: 'Albums' }).click()
-    await expect(page.getByRole('button', { name: 'Create album' })).toBeVisible()
-    await shoot(page, testInfo, 'albums')
-
-    await page.getByRole('button', { name: 'Create album' }).click()
-    await expect(page.getByRole('textbox', { name: 'Edit Title' })).toBeVisible()
-    await shoot(page, testInfo, 'album')
-  })
-
-  test('the admin pages render', async ({ page }, testInfo) => {
-    await login(page, deviceUser, devicePassword)
+  await test.step('the admin pages render', async () => {
     await openAdministration(page, deviceUser)
 
     await page.getByRole('link', { name: 'Users', exact: true }).click()
     await expect(page.getByRole('table')).toBeVisible()
-    await shoot(page, testInfo, 'admin-users')
+    await shoot(page, 'admin-users')
 
     await page.getByRole('link', { name: 'Job Queues', exact: true }).click()
     await expect(page.getByRole('link', { name: 'Generate Thumbnails' })).toBeVisible()
-    await shoot(page, testInfo, 'admin-queues')
+    await shoot(page, 'admin-queues')
 
     await page.getByRole('link', { name: 'Settings', exact: true }).click()
     await expect(page.getByRole('textbox', { name: 'Search settings' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Authentication Settings' })).toBeVisible()
-    await shoot(page, testInfo, 'admin-settings')
+    await shoot(page, 'admin-settings')
 
     await page.getByRole('link', { name: 'Server Stats', exact: true }).click()
     await expect(page.getByText('Total usage')).toBeVisible()
-    await shoot(page, testInfo, 'admin-stats')
+    await shoot(page, 'admin-stats')
+  })
+
+  await test.step('create an album', async () => {
+    await openPhotos(page)
+    await primaryNav(page).getByRole('link', { name: 'Albums' }).click()
+    await expect(page.getByRole('button', { name: 'Create album' })).toBeVisible()
+    await shoot(page, 'albums')
+
+    await page.getByRole('button', { name: 'Create album' }).click()
+    await expect(page.getByRole('textbox', { name: 'Edit Title' })).toBeVisible()
+    await shoot(page, 'album')
   })
 })

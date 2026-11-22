@@ -1,4 +1,5 @@
-import { Page, expect } from '@playwright/test'
+import { Locator, Page } from '@playwright/test'
+import { expect } from '../fixtures'
 import * as path from 'node:path'
 import { env } from './env'
 
@@ -22,7 +23,10 @@ export function assets(page: Page) {
 
 export async function login(page: Page, user: string, password: string) {
   await page.goto('/')
+  await signIn(page, user, password)
+}
 
+export async function signIn(page: Page, user: string, password: string) {
   const username = page.locator('#username-textfield')
   const redirected = await username
     .waitFor({ state: 'visible', timeout: 15_000 })
@@ -41,8 +45,12 @@ export async function login(page: Page, user: string, password: string) {
 export async function finishOnboarding(page: Page) {
   const card = page.locator('#onboarding-card')
   const nav = primaryNav(page)
+  const notNow = page.getByRole('button', { name: 'Not now' })
 
   await expect(async () => {
+    if (await notNow.isVisible()) {
+      await notNow.click()
+    }
     if (await card.isVisible()) {
       await card.getByRole('button').last().click()
     }
@@ -85,8 +93,11 @@ export async function openSettingsSection(page: Page, section: string) {
   await page.getByRole('button', { name: new RegExp('^' + section) }).click()
 }
 
-export async function saveSettings(page: Page) {
-  await page.getByRole('button', { name: 'Save', exact: true }).click()
+export async function saveSettings(control: Locator) {
+  await control
+    .locator('xpath=ancestor::form[1]')
+    .getByRole('button', { name: 'Save', exact: true })
+    .click()
 }
 
 export async function uploadPhoto(page: Page, file: string) {

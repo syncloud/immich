@@ -54,7 +54,6 @@ LD=$(ls ${SNAP}/immich/usr/lib/*-linux-*/ld-linux-*.so.* ${SNAP}/immich/usr/lib/
 LIBS=$(echo ${SNAP}/immich/usr/lib/*-linux-gnu*)
 LIBS=${LIBS}:${SNAP}/immich/usr/lib:${SNAP}/immich/usr/local/lib
 
-# an object's own DT_RUNPATH wins over the rpath of whatever loads it
 find ${BUILD_DIR}/usr \( -name '*.so' -o -name '*.so.*' -o -name '*.node' \) -type f | while read -r object; do
     rpath=$(patchelf --print-rpath "${object}" 2>/dev/null) || continue
     if [ -z "${rpath}" ]; then
@@ -70,8 +69,6 @@ find ${BUILD_DIR}/usr \( -name '*.so' -o -name '*.so.*' -o -name '*.node' \) -ty
     patchelf --force-rpath --set-rpath "${relocated}" "${object}"
 done
 
-# the rpath must be set before the interpreter and in a separate call, or node
-# segfaults; DT_RPATH rather than DT_RUNPATH because native addons dlopen later
 patch() {
     patchelf --force-rpath --set-rpath "$2" ${BUILD_DIR}/$1
     patchelf --set-interpreter ${LD} ${BUILD_DIR}/$1

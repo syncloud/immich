@@ -1,14 +1,20 @@
 #!/bin/bash -eu
-# usage: run.sh <artifact-subdir> <spec> <project>
+
 DIR=$(cd "$(dirname "$0")" && pwd)
 cd "$DIR"
 
-ARTIFACT_SUBDIR=$1
-SPEC=$2
-PROJECT=$3
+SPEC=${1:?usage: run.sh <spec>}
 
-export PLAYWRIGHT_PROJECT=${PROJECT}
-export PLAYWRIGHT_ARTIFACT_DIR=/drone/src/artifact/${ARTIFACT_SUBDIR}
+export PLAYWRIGHT_FULL_DOMAIN=bookworm.com
+export PLAYWRIGHT_APP_DOMAIN=immich.${PLAYWRIGHT_FULL_DOMAIN}
+export PLAYWRIGHT_DEVICE_HOST=${PLAYWRIGHT_APP_DOMAIN}
+export PLAYWRIGHT_DEVICE_USER=user
+export PLAYWRIGHT_DEVICE_PASSWORD=Password1
+export PLAYWRIGHT_SSH_USER=root
+export PLAYWRIGHT_SSH_PASSWORD=Password1
+export PLAYWRIGHT_SAMPLES=$(cd "${DIR}/../samples" && pwd)
+export PLAYWRIGHT_ARTIFACT_DIR=$(cd "${DIR}/../.." && pwd)/artifact/screenshots
+export PLAYWRIGHT_PROJECT=desktop
 
 "${DIR}/../../ci/apt.sh" sshpass openssh-client curl
 DEVICE_IP=$(getent hosts "${PLAYWRIGHT_APP_DOMAIN}" | head -1 | cut -d' ' -f1)

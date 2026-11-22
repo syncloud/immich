@@ -1,13 +1,13 @@
 local name = 'immich';
-local version = 'v3.2.2';
+local version = 'v3.4.2';
 local postgresql = '14-vectorchord0.4.3-pgvectors0.2.0';
-local valkey = '9.1.2';
+local valkey = '9.1.4';
 
 local go = '1.25';
 local nginx = '1.30.7';
 local debian = 'bookworm-slim';
 local python = '3.12-slim-bookworm';
-local platform = '26.09.02';
+local platform = '26.10.02';
 local playwright = 'mcr.microsoft.com/playwright:v1.59.1-jammy';
 local store_publisher = 'stable-346';
 local distro_default = 'bookworm';
@@ -15,23 +15,10 @@ local distros = ['bookworm', 'buster'];
 
 local platform_image(distro) = 'syncloud/platform-' + distro + ':' + platform;
 
-local full_domain = distro_default + '.com';
-local app_domain = name + '.' + full_domain;
-
-local e2e(step, artifact, spec) = {
+local e2e(step, spec) = {
   name: step,
   image: playwright,
-  environment: {
-    PLAYWRIGHT_FULL_DOMAIN: full_domain,
-    PLAYWRIGHT_APP_DOMAIN: app_domain,
-    PLAYWRIGHT_DEVICE_HOST: app_domain,
-    PLAYWRIGHT_DEVICE_USER: 'user',
-    PLAYWRIGHT_DEVICE_PASSWORD: 'Password1',
-    PLAYWRIGHT_SSH_USER: 'root',
-    PLAYWRIGHT_SSH_PASSWORD: 'Password1',
-    PLAYWRIGHT_SAMPLES: '/drone/src/test/samples',
-  },
-  commands: ['./test/e2e/run.sh ' + artifact + ' specs/' + spec + '.spec.ts desktop'],
+  commands: ['./test/e2e/run.sh specs/' + spec + '.spec.ts'],
 };
 
 local snapd_hold = "mkdir -p /etc/systemd/system/snapd.service.d && printf '[Service]\\nExecStartPost=/bin/sh -c \"/usr/bin/snap set system refresh.hold=2099-01-01T00:00:00Z\"\\n' > /etc/systemd/system/snapd.service.d/disable-refresh.conf && exec /sbin/init";
@@ -136,21 +123,21 @@ local build(arch, test_ui) = [{
     }
     for distro in distros
   ] + (if test_ui then [
-         e2e('e2e', 'e2e', '01-smoke'),
-         e2e('e2e admin group', 'e2e-admin-group', '04-admin-group'),
-         e2e('e2e ui', 'e2e-ui', '05-ui'),
+         e2e('e2e', '01-smoke'),
+         e2e('e2e admin group', '04-admin-group'),
+         e2e('e2e ui', '05-ui'),
          {
            name: 'test-upgrade-prev',
            image: 'python:' + python,
            commands: ['./ci/test.sh upgrade_prev.py ' + distro_default + ' ' + name],
          },
-         e2e('e2e-before-upgrade', 'e2e-before-upgrade', '02-pre-upgrade'),
+         e2e('e2e-before-upgrade', '02-pre-upgrade'),
          {
            name: 'test-upgrade',
            image: 'python:' + python,
            commands: ['./ci/test.sh upgrade.py ' + distro_default + ' ' + name],
          },
-         e2e('e2e-after-upgrade', 'e2e-after-upgrade', '03-post-upgrade'),
+         e2e('e2e-after-upgrade', '03-post-upgrade'),
        ] else []) + [
     {
       name: 'publish',
